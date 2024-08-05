@@ -15,7 +15,7 @@ from models import SpanBERTForRE, TransformerEncoder, TransformerEncoderLayer, O
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 n_gpu = torch.cuda.device_count()
 print(device)
-path = 'datasets/openie4.pkl'
+path = 'C:\\Users\\mitra\\PycharmProjects\\ONIEX\\datasets\\openie4.pkl\\openie4.pkl'
 with open(path, 'rb') as f:
   data = pickle.load(f)
   sentences = data['tokens']
