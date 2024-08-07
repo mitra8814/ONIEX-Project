@@ -4,6 +4,8 @@ Download pytorch_model.bin from https://drive.google.com/file/d/1-4U1x5UqkfWMI8u
 
 run the requirements.txt using: pip install -r requirements.txt
 
+run splitting.py to split the dataset into test and train: pip splitting.py
+
 run main.py using: python main.py
 
 
