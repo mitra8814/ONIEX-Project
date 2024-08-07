@@ -15,25 +15,49 @@ from models import SpanBERTForRE, TransformerEncoder, TransformerEncoderLayer, O
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 n_gpu = torch.cuda.device_count()
 print(device)
-path = 'C:\\Users\\mitra\\PycharmProjects\\ONIEX\\datasets\\openie4.pkl\\openie4.pkl'
+
+path = 'datasets/train_data.pkl'
 with open(path, 'rb') as f:
-  data = pickle.load(f)
-  sentences = data['tokens']
-  P_pos = data['single_pred_labels']
-  ent = data['single_arg_labels']
-  label = data['all_pred_labels']
+  train_data = pickle.load(f)
+path = 'datasets/test_data.pkl'
+with open(path, 'rb') as f:
+  test_data = pickle.load(f)
+
+test_sentences = test_data['tokens']
+test_P_pos = test_data['single_pred_labels']
+test_ent = test_data['single_arg_labels']
+test_label = test_data['all_pred_labels']
+
+train_sentences = train_data['tokens']
+train_P_pos = train_data['single_pred_labels']
+train_ent = train_data['single_arg_labels']
+train_label = train_data['all_pred_labels']
 print("1")
-print(sentences[1])
-ent = [[0 if x == 1 else x for x in en] for en in ent]
-ent = [[1 if x == 2 else x for x in en] for en in ent]
-ent = [[1 if x == 3 else x for x in en] for en in ent]
-ent = [[2 if x == 4 else x for x in en] for en in ent]
-ent = [[2 if x == 5 else x for x in en] for en in ent]
-ent = [[3 if x == 6 else x for x in en] for en in ent]
-ent = [[3 if x == 7 else x for x in en] for en in ent]
-ent = [[4 if x == 8 else x for x in en] for en in ent]
-P_pos = [[1 if x == 0 else x for x in P] for P in P_pos]
-P_pos = [[0 if x == 2 else x for x in P] for P in P_pos]
+print(train_sentences[1])
+train_ent = [[0 if x == 1 else x for x in en] for en in train_ent]
+train_ent = [[1 if x == 2 else x for x in en] for en in train_ent]
+train_ent = [[1 if x == 3 else x for x in en] for en in train_ent]
+train_ent = [[2 if x == 4 else x for x in en] for en in train_ent]
+train_ent = [[2 if x == 5 else x for x in en] for en in train_ent]
+train_ent = [[3 if x == 6 else x for x in en] for en in train_ent]
+train_ent = [[3 if x == 7 else x for x in en] for en in train_ent]
+train_ent = [[4 if x == 8 else x for x in en] for en in train_ent]
+
+test_ent = [[0 if x == 1 else x for x in en] for en in test_ent]
+test_ent = [[1 if x == 2 else x for x in en] for en in test_ent]
+test_ent = [[1 if x == 3 else x for x in en] for en in test_ent]
+test_ent = [[2 if x == 4 else x for x in en] for en in test_ent]
+test_ent = [[2 if x == 5 else x for x in en] for en in test_ent]
+test_ent = [[3 if x == 6 else x for x in en] for en in test_ent]
+test_ent = [[3 if x == 7 else x for x in en] for en in test_ent]
+test_ent = [[4 if x == 8 else x for x in en] for en in test_ent]
+
+train_P_pos = [[1 if x == 0 else x for x in P] for P in train_P_pos]
+train_P_pos = [[0 if x == 2 else x for x in P] for P in train_P_pos]
+
+test_P_pos = [[1 if x == 0 else x for x in P] for P in test_P_pos]
+test_P_pos = [[0 if x == 2 else x for x in P] for P in test_P_pos]
+
 max_len = 512
 tag2idx = {
  'R-B' : 0,
@@ -59,7 +83,8 @@ word_piece_labels = []
 ent_tags = []
 p_poss = []
 i_inc = 0
-for word_list,lab,enttag,pos in (zip(sentences,label,ent,P_pos)):
+
+for word_list,lab,enttag,pos in (zip(train_sentences,train_label,train_ent,train_P_pos)):
     temp_lable = []
     temp_token = []
     temp_enttag = []
@@ -91,25 +116,70 @@ for word_list,lab,enttag,pos in (zip(sentences,label,ent,P_pos)):
         print("No.%d,len:%d"%(i_inc,len(temp_pos)))
         print("p_pos: ", temp_pos)
     i_inc += 1
-input_ids = pad_sequences([tokenizer.convert_tokens_to_ids(txt) for txt in tokenized_texts],
+tr_inputs = pad_sequences([tokenizer.convert_tokens_to_ids(txt) for txt in tokenized_texts],
                           maxlen = max_len, dtype = "long", truncating = "post", padding = "post")
-tags = pad_sequences([[l for l in lab] for lab in word_piece_labels],
+tr_tags = pad_sequences([[l for l in lab] for lab in word_piece_labels],
                      maxlen = max_len, value = tag2idx["O"], padding = "post",
                      dtype = "long", truncating = "post")
-entss = pad_sequences([[l for l in lab] for lab in ent_tags],
+tr_ent = pad_sequences([[l for l in lab] for lab in ent_tags],
                      maxlen = max_len, value = ent2idx["O"], padding = "post",
                      dtype = "long", truncating = "post")
-p_pos= pad_sequences([[p for p in pos] for pos in p_poss],
+tr_ppos= pad_sequences([[p for p in pos] for pos in p_poss],
                      maxlen = max_len, value = 0, padding = "post",
                      dtype = "long", truncating = "post")
-attention_masks = [[int(i > 0) for i in ii] for ii in input_ids]
-tr_inputs, ts_inputs, tr_tags, ts_tags, tr_masks, ts_masks, tr_ent, ts_ent, tr_ppos, ts_ppos = train_test_split(input_ids,
-                                                                                                                            tags,
-                                                                                                                            attention_masks,
-                                                                                                                            entss,
-                                                                                                                            p_pos,
-                                                                                                                            random_state=4,
-                                                                                                                            test_size=0.3)
+tr_masks = [[int(i > 0) for i in ii] for ii in tr_inputs]
+
+
+tokenized_texts = []
+word_piece_labels = []
+ent_tags = []
+p_poss = []
+i_inc = 0
+
+for word_list,lab,enttag,pos in (zip(test_sentences,test_label,test_ent,test_P_pos)):
+    temp_lable = []
+    temp_token = []
+    temp_enttag = []
+    temp_pos = []
+    temp_lable.append(3)
+    temp_token.append('[CLS]')
+    temp_enttag.append(5)
+    temp_pos.append(0)
+    for word, la, en, p in zip(word_list, lab, enttag, pos):
+        temp_token.append(word)
+        temp_lable.append(la)
+        temp_enttag.append(en)
+        temp_pos.append(p)
+    temp_lable.append(4)
+    temp_token.append('[SEP]')
+    temp_enttag.append(6)
+    temp_pos.append(0)
+    tokenized_texts.append(temp_token)
+    word_piece_labels.append(temp_lable)
+    ent_tags.append(temp_enttag)
+    p_poss.append(temp_pos)
+    if 10 > i_inc:
+        print("No.%d,len:%d"%(i_inc,len(temp_token)))
+        print("texts", temp_token)
+        print("No.%d,len:%d"%(i_inc,len(temp_lable)))
+        print("lables ",temp_lable)
+        print("No.%d,len:%d"%(i_inc,len(temp_enttag)))
+        print("ents ", temp_enttag)
+        print("No.%d,len:%d"%(i_inc,len(temp_pos)))
+        print("p_pos: ", temp_pos)
+    i_inc += 1
+ts_inputs = pad_sequences([tokenizer.convert_tokens_to_ids(txt) for txt in tokenized_texts],
+                          maxlen = max_len, dtype = "long", truncating = "post", padding = "post")
+ts_tags = pad_sequences([[l for l in lab] for lab in word_piece_labels],
+                     maxlen = max_len, value = tag2idx["O"], padding = "post",
+                     dtype = "long", truncating = "post")
+ts_ent = pad_sequences([[l for l in lab] for lab in ent_tags],
+                     maxlen = max_len, value = ent2idx["O"], padding = "post",
+                     dtype = "long", truncating = "post")
+ts_ppos= pad_sequences([[p for p in pos] for pos in p_poss],
+                     maxlen = max_len, value = 0, padding = "post",
+                     dtype = "long", truncating = "post")
+ts_masks = [[int(i > 0) for i in ii] for ii in ts_inputs]
 
 
 print(tr_inputs.shape)
@@ -126,7 +196,7 @@ ts_ent = torch.tensor(ts_ent)
 tr_ppos = torch.tensor(tr_ppos)
 ts_ppos = torch.tensor(ts_ppos)
 print("2")
-batch_num = 32
+batch_num = 16
 num_labels = len(tag2idx)
 train_data = TensorDataset(tr_inputs, tr_masks, tr_ent, tr_tags, tr_ppos)
 train_sampler = RandomSampler(train_data)
